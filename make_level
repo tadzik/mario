@@ -1,0 +1,22 @@
+#!/usr/bin/env perl
+
+my $filename = shift;
+open(my $fh, '<', $filename) or die "No such file: $filename";
+
+my @lines;
+
+my ($w, $h) = split(/\s/, <$fh>);
+
+while (<$fh>) {
+    chomp;
+    for my $i (0..15) {
+        $lines[$i] .= substr($_, $i, 1)
+    }
+}
+
+close $fh;
+
+open(my $dst, '>', "$filename.lvl");
+print $dst pack('ii', $w, $h);
+print $dst @lines;
+close($dst);
