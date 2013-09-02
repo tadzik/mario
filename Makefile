@@ -9,7 +9,7 @@ level.lvl: level
 
 main: main.cpp
 	$(CC) -c $(CFLAGS) main.cpp
-	$(CC) $(LIBS) main.o -o main
+	$(CC) main.o $(LIBS) -o main
 
 clean:
 	rm -f *.o main level.lvl

@@ -9,7 +9,7 @@ my ($w, $h) = split(/\s/, <$fh>);
 
 while (<$fh>) {
     chomp;
-    for my $i (0..15) {
+    for my $i (0..length($_)-1) {
         $lines[$i] .= substr($_, $i, 1)
     }
 }
