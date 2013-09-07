@@ -27,8 +27,31 @@ int sdl_timer_cb(int interval, void *world)
 struct Level {
     int w, h, max_offset;
     char *data;
+    Uint32 grass_colour;
+    Uint32 brick_colour;
+    Uint32 sky_colour;
+    int rectw, recth;
 
-    Level() : w(0), h(0), data(nullptr) {}
+    Level(SDL_Surface *screen) : w(0), h(0), data(nullptr) {
+        sky_colour = SDL_MapRGB(screen->format, 100, 100, 255);
+        grass_colour = SDL_MapRGB(screen->format, 100, 255, 100);
+        brick_colour = SDL_MapRGB(screen->format, 255, 100, 100);
+        rectw = screen->w / WIDTH;
+        recth = screen->h / HEIGHT;
+    }
+
+    void draw(SDL_Surface *screen, int offset)
+    {
+        offset /= rectw;
+        SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw),static_cast<Uint16>(recth) };
+        for (int i = 0; i < WIDTH; i++) {
+            piecerect.x = i * rectw;
+            for (int j = 0; j < HEIGHT; j++) {
+                piecerect.y = j * recth;
+                SDL_FillRect(screen, &piecerect, colour(tolower(at(offset + i, j))));
+            }
+        }
+    }
 
     bool load(const char *filename)
     {
@@ -53,6 +76,17 @@ struct Level {
     {
         return *(data + x * h + y);
     }
+
+    Uint32 colour(char symbol)
+    {
+        switch (symbol) {
+        case 's': return sky_colour;
+        case 'g': return grass_colour;
+        case 'b': return brick_colour;
+        default: return 0;
+        }
+    }
+
 
     ~Level()
     {
@@ -113,24 +147,18 @@ class World {
     Level level;
     bool running;
     bool keyboard_map[SDLK_LAST];
-    Uint32 grass_colour;
-    Uint32 brick_colour;
-    Uint32 sky_colour;
     int level_offset;
     int rectw, recth;
 
 public:
     World(SDL_Surface *s, const char *player_path)
-        : screen(s), player(player_path), running(0), level_offset(0)
+        : screen(s), player(player_path), level(screen), running(0), level_offset(0)
     {
         // every 16 ms, for approx. 60 fps
         SDL_AddTimer(16, (SDL_NewTimerCallback)sdl_timer_cb, this);
         if (!level.load("level.lvl")) {
             puts("Level file fucked!");
         }
-        sky_colour = SDL_MapRGB(screen->format, 100, 100, 255);
-        grass_colour = SDL_MapRGB(screen->format, 100, 255, 100);
-        brick_colour = SDL_MapRGB(screen->format, 255, 100, 100);
         for (int i = 0; i < SDLK_LAST; i++) {
             keyboard_map[i] = false;
         }
@@ -138,26 +166,9 @@ public:
         recth = screen->h / HEIGHT;
     }
 
-    Uint32 colour(char symbol)
-    {
-        switch (symbol) {
-        case 's': return sky_colour;
-        case 'g': return grass_colour;
-        case 'b': return brick_colour;
-        default: return 0;
-        }
-    }
-
     void draw()
     {
-        SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw),static_cast<Uint16>(recth) };
-        for (int i = 0; i < WIDTH; i++) {
-            piecerect.x = i * rectw;
-            for (int j = 0; j < HEIGHT; j++) {
-                piecerect.y = j * recth;
-                SDL_FillRect(screen, &piecerect, colour(tolower(level.at(level_offset + i, j))));
-            }
-        }
+        level.draw(screen, level_offset * rectw);
         player.draw(screen);
         SDL_Flip(screen);
     }
