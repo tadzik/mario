@@ -42,20 +42,20 @@ struct Level {
 
     void draw(SDL_Surface *screen)
     {
-        int off = offset;
+        int off = offset / rectw;
         SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw),static_cast<Uint16>(recth) };
-        for (int i = 0; i < WIDTH; i++) {
-            piecerect.x = i * rectw;
+        for (int i = off; i <= WIDTH + off; i++) {
+            piecerect.x = i * rectw - offset;
             for (int j = 0; j < HEIGHT; j++) {
                 piecerect.y = j * recth;
-                SDL_FillRect(screen, &piecerect, colour(tolower(at(off + i, j))));
+                SDL_FillRect(screen, &piecerect, colour(tolower(at(i, j))));
             }
         }
     }
 
     bool legal_pos(int x, int y)
     {
-        x += offset * rectw;
+        x += offset;
         int sx = x / rectw;
         int sy = y / recth;
         return islower(at(sx, sy));
@@ -77,13 +77,15 @@ struct Level {
             return false;
         }
         offset = 0;
-        max_offset = w - WIDTH;
+        max_offset = (w - WIDTH) * rectw;
         return true;
     }
 
     char at(int x, int y)
     {
-        return *(data + x * h + y);
+        int of = x * h + y;
+        if (of > w * h) return 'B';
+        return *(data + of);
     }
 
     Uint32 colour(char symbol)
@@ -226,7 +228,7 @@ public:
 
     bool player_pos_ok(Player& p)
     {
-        if (p.x < level.offset || p.x + p.rect.w >= screen->w)
+        if (p.x + p.rect.w >= screen->w)
             return false;
         if (!level.legal_pos(p.x, p.y + p.rect.h)) {
             return false;
@@ -270,8 +272,8 @@ public:
             if (player_can_move(5, 0)) {
                 player.x += 5;
                 if (player.x > screen->w / 2 && level.offset < level.max_offset) {
-                    level.offset++;
-                    player.x -= rectw;
+                    level.offset += 5;
+                    player.x -= 5;
                 }
             }
         }
