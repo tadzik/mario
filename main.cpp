@@ -43,7 +43,8 @@ struct Level {
     void draw(SDL_Surface *screen)
     {
         int off = offset / rectw;
-        SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw),static_cast<Uint16>(recth) };
+        SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw + offset),
+                                     static_cast<Uint16>(recth) };
         for (int i = off; i <= WIDTH + off; i++) {
             piecerect.x = i * rectw - offset;
             for (int j = 0; j < HEIGHT; j++) {
