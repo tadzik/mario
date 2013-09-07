@@ -53,6 +53,14 @@ struct Level {
         }
     }
 
+    bool legal_pos(int x, int y)
+    {
+        x += offset * rectw;
+        int sx = x / rectw;
+        int sy = y / recth;
+        return islower(at(sx, sy));
+    }
+
     bool load(const char *filename)
     {
         free(data);
@@ -218,33 +226,22 @@ public:
 
     bool player_pos_ok(Player& p)
     {
-        int sx, sy;
         if (p.x < level.offset || p.x + p.rect.w >= screen->w)
             return false;
-        square_at(p.x, p.y + p.rect.h, &sx, &sy);
-        if (isupper(level.at(level.offset + sx, sy))) {
+        if (!level.legal_pos(p.x, p.y + p.rect.h)) {
             return false;
         }
-        square_at(p.x + p.rect.w, p.y + p.rect.h, &sx, &sy);
-        if (isupper(level.at(level.offset + sx, sy))) {
+        if (!level.legal_pos(p.x + p.rect.w, p.y + p.rect.h)) {
             return false;
         }
-        square_at(p.x, p.y, &sx, &sy);
-        if (isupper(level.at(level.offset + sx, sy))) {
+        if (!level.legal_pos(p.x, p.y)) {
             return false;
         }
-        square_at(p.x + p.rect.w, p.y, &sx, &sy);
-        if (isupper(level.at(level.offset + sx, sy))) {
+        if (!level.legal_pos(p.x + p.rect.w, p.y)) {
             return false;
         }
 
         return true;
-    }
-
-    void square_at(int x, int y, int *sx, int *sy)
-    {
-        *sx = x / rectw;
-        *sy = y / recth;
     }
 
     void run()
