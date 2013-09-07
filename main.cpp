@@ -25,7 +25,7 @@ int sdl_timer_cb(int interval, void *world)
 }
 
 struct Level {
-    int w, h, max_offset;
+    int w, h, offset, max_offset;
     char *data;
     Uint32 grass_colour;
     Uint32 brick_colour;
@@ -40,15 +40,15 @@ struct Level {
         recth = screen->h / HEIGHT;
     }
 
-    void draw(SDL_Surface *screen, int offset)
+    void draw(SDL_Surface *screen)
     {
-        offset /= rectw;
+        int off = offset;
         SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw),static_cast<Uint16>(recth) };
         for (int i = 0; i < WIDTH; i++) {
             piecerect.x = i * rectw;
             for (int j = 0; j < HEIGHT; j++) {
                 piecerect.y = j * recth;
-                SDL_FillRect(screen, &piecerect, colour(tolower(at(offset + i, j))));
+                SDL_FillRect(screen, &piecerect, colour(tolower(at(off + i, j))));
             }
         }
     }
@@ -68,6 +68,7 @@ struct Level {
             free(data);
             return false;
         }
+        offset = 0;
         max_offset = w - WIDTH;
         return true;
     }
@@ -147,12 +148,11 @@ class World {
     Level level;
     bool running;
     bool keyboard_map[SDLK_LAST];
-    int level_offset;
     int rectw, recth;
 
 public:
     World(SDL_Surface *s, const char *player_path)
-        : screen(s), player(player_path), level(screen), running(0), level_offset(0)
+        : screen(s), player(player_path), level(screen), running(0)
     {
         // every 16 ms, for approx. 60 fps
         SDL_AddTimer(16, (SDL_NewTimerCallback)sdl_timer_cb, this);
@@ -168,7 +168,7 @@ public:
 
     void draw()
     {
-        level.draw(screen, level_offset * rectw);
+        level.draw(screen);
         player.draw(screen);
         SDL_Flip(screen);
     }
@@ -219,22 +219,22 @@ public:
     bool player_pos_ok(Player& p)
     {
         int sx, sy;
-        if (p.x < level_offset || p.x + p.rect.w >= screen->w)
+        if (p.x < level.offset || p.x + p.rect.w >= screen->w)
             return false;
         square_at(p.x, p.y + p.rect.h, &sx, &sy);
-        if (isupper(level.at(level_offset + sx, sy))) {
+        if (isupper(level.at(level.offset + sx, sy))) {
             return false;
         }
         square_at(p.x + p.rect.w, p.y + p.rect.h, &sx, &sy);
-        if (isupper(level.at(level_offset + sx, sy))) {
+        if (isupper(level.at(level.offset + sx, sy))) {
             return false;
         }
         square_at(p.x, p.y, &sx, &sy);
-        if (isupper(level.at(level_offset + sx, sy))) {
+        if (isupper(level.at(level.offset + sx, sy))) {
             return false;
         }
         square_at(p.x + p.rect.w, p.y, &sx, &sy);
-        if (isupper(level.at(level_offset + sx, sy))) {
+        if (isupper(level.at(level.offset + sx, sy))) {
             return false;
         }
 
@@ -272,8 +272,8 @@ public:
         if (keyboard_map[SDLK_RIGHT]) {
             if (player_can_move(5, 0)) {
                 player.x += 5;
-                if (player.x > screen->w / 2 && level_offset < level.max_offset) {
-                    level_offset++;
+                if (player.x > screen->w / 2 && level.offset < level.max_offset) {
+                    level.offset++;
                     player.x -= rectw;
                 }
             }
