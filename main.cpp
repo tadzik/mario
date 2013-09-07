@@ -25,7 +25,7 @@ int sdl_timer_cb(int interval, void *world)
 }
 
 struct Level {
-    int w, h;
+    int w, h, max_offset;
     char *data;
 
     Level() : w(0), h(0), data(nullptr) {}
@@ -45,6 +45,7 @@ struct Level {
             free(data);
             return false;
         }
+        max_offset = w - WIDTH;
         return true;
     }
 
@@ -116,6 +117,7 @@ class World {
     Uint32 brick_colour;
     Uint32 sky_colour;
     int level_offset;
+    int rectw, recth;
 
 public:
     World(SDL_Surface *s, const char *player_path)
@@ -132,6 +134,8 @@ public:
         for (int i = 0; i < SDLK_LAST; i++) {
             keyboard_map[i] = false;
         }
+        rectw = screen->w / WIDTH;
+        recth = screen->h / HEIGHT;
     }
 
     Uint32 colour(char symbol)
@@ -146,8 +150,6 @@ public:
 
     void draw()
     {
-        int rectw = screen->w / WIDTH;
-        int recth = screen->h / HEIGHT;
         SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw),static_cast<Uint16>(recth) };
         for (int i = 0; i < WIDTH; i++) {
             piecerect.x = i * rectw;
@@ -206,7 +208,7 @@ public:
     bool player_pos_ok(Player& p)
     {
         int sx, sy;
-        if (p.x < 0 || p.x + p.rect.w > screen->w)
+        if (p.x < level_offset || p.x + p.rect.w >= screen->w)
             return false;
         square_at(p.x, p.y + p.rect.h, &sx, &sy);
         if (isupper(level.at(level_offset + sx, sy))) {
@@ -230,8 +232,6 @@ public:
 
     void square_at(int x, int y, int *sx, int *sy)
     {
-        int rectw = screen->w / WIDTH;
-        int recth = screen->h / HEIGHT;
         *sx = x / rectw;
         *sy = y / recth;
     }
@@ -261,6 +261,10 @@ public:
         if (keyboard_map[SDLK_RIGHT]) {
             if (player_can_move(5, 0)) {
                 player.x += 5;
+                if (player.x > screen->w / 2 && level_offset < level.max_offset) {
+                    level_offset++;
+                    player.x -= rectw;
+                }
             }
         }
         if (keyboard_map[SDLK_LEFT]) {
