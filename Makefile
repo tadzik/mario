@@ -1,6 +1,6 @@
 CC = clang++
 CFLAGS = -ggdb -std=c++11 -pedantic -Wall -Wextra $(shell pkg-config --cflags sdl)
-LIBS = $(shell pkg-config --libs sdl SDL_gfx SDL_image) -lm -lSDL_ttf -lSDL_mixer
+LIBS = $(shell pkg-config --libs sdl SDL_image) -lm
 
 all: level.lvl main
 

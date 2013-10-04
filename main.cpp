@@ -1,8 +1,6 @@
 // if you cringe at the notion of mixing C with C++... you better not read that
 
 #include <SDL.h>
-#include <SDL_gfxPrimitives.h>
-#include <SDL_ttf.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
