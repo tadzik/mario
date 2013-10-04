@@ -13,9 +13,14 @@ Level.o: Level.h Level.cpp
 Player.o: Player.h Player.cpp
 	$(CC) -c $(CFLAGS) Player.cpp
 
-main: main.cpp Level.o Player.o
+World.o: Level.h Player.h World.h World.cpp
+	$(CC) -c $(CFLAGS) World.cpp
+
+main.o: World.h main.cpp
 	$(CC) -c $(CFLAGS) main.cpp
-	$(CC) main.o Level.o Player.o $(LIBS) -o main
+
+main: main.o Level.o Player.o World.o
+	$(CC) main.o Level.o Player.o World.o $(LIBS) -o main
 
 clean:
 	rm -f *.o main level.lvl
