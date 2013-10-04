@@ -3,16 +3,15 @@
 #include <SDL.h>
 #include <SDL_gfxPrimitives.h>
 #include <SDL_ttf.h>
-#include <SDL_mixer.h>
-#include <SDL_image.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
 
-#define HEIGHT 12
-#define WIDTH  16
+#include "Level.h"
+
+#include "Player.h"
 
 int sdl_timer_cb(int interval, void *world)
 {
@@ -24,133 +23,6 @@ int sdl_timer_cb(int interval, void *world)
     return interval;
 }
 
-struct Level {
-    int w, h, offset, max_offset;
-    char *data;
-    Uint32 grass_colour;
-    Uint32 brick_colour;
-    Uint32 sky_colour;
-    int rectw, recth;
-
-    Level(SDL_Surface *screen) : w(0), h(0), data(nullptr) {
-        sky_colour = SDL_MapRGB(screen->format, 100, 100, 255);
-        grass_colour = SDL_MapRGB(screen->format, 100, 255, 100);
-        brick_colour = SDL_MapRGB(screen->format, 255, 100, 100);
-        rectw = screen->w / WIDTH;
-        recth = screen->h / HEIGHT;
-    }
-
-    void draw(SDL_Surface *screen)
-    {
-        int off = offset / rectw;
-        SDL_Rect piecerect = { 0, 0, static_cast<Uint16>(rectw + offset),
-                                     static_cast<Uint16>(recth) };
-        for (int i = off; i <= WIDTH + off; i++) {
-            piecerect.x = i * rectw - offset;
-            for (int j = 0; j < HEIGHT; j++) {
-                piecerect.y = j * recth;
-                SDL_FillRect(screen, &piecerect, colour(tolower(at(i, j))));
-            }
-        }
-    }
-
-    bool legal_pos(int x, int y)
-    {
-        x += offset;
-        int sx = x / rectw;
-        int sy = y / recth;
-        return islower(at(sx, sy));
-    }
-
-    bool load(const char *filename)
-    {
-        free(data);
-        FILE *fp = fopen(filename, "r");
-        if (fp == nullptr) return false;
-        fread(&w, sizeof(int), 1, fp);
-        fread(&h, sizeof(int), 1, fp);
-        size_t bytes = w * h;
-        data = (char *)malloc(bytes * sizeof(char));
-        size_t read = fread(data, sizeof(char), bytes, fp);
-        fclose(fp);
-        if (read != bytes) {
-            free(data);
-            return false;
-        }
-        offset = 0;
-        max_offset = (w - WIDTH) * rectw;
-        return true;
-    }
-
-    char at(int x, int y)
-    {
-        int of = x * h + y;
-        if (of > w * h) return 'B';
-        return *(data + of);
-    }
-
-    Uint32 colour(char symbol)
-    {
-        switch (symbol) {
-        case 's': return sky_colour;
-        case 'g': return grass_colour;
-        case 'b': return brick_colour;
-        default: return 0;
-        }
-    }
-
-
-    ~Level()
-    {
-        free(data);
-    }
-};
-
-struct Player {
-    SDL_Surface *image;
-    SDL_Rect rect;
-    Uint16 x, y;
-    double vvel;
-
-    Player()
-    {
-        x = y = vvel = rect.w = rect.h = 0;
-        image = NULL;
-    }
-
-    Player(const char *path)
-    {
-        x = y = 5;
-        vvel = 0;
-        image = IMG_Load(path);
-        rect.w = image->w;
-        rect.h = image->h;
-    }
-
-    void moved(int dx, int dy, Player& p)
-    {
-        p.x = x + dx;
-        p.y = y + dy;
-        p.rect = rect;
-    }
-
-    int feet_y()
-    {
-        return y + rect.y;
-    }
-
-    void draw(SDL_Surface *dst)
-    {
-        rect.x = x;
-        rect.y = y;
-        SDL_BlitSurface(image, NULL, dst, &rect);
-    }
-
-    ~Player()
-    {
-        SDL_FreeSurface(image);
-    }
-};
 
 class World {
     SDL_Surface *screen;
